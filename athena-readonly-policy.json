@@ -11,6 +11,7 @@
                 "athena:ListDataCatalogs",
                 "athena:ListTableMetadata",
                 "athena:ListWorkGroups",
+                "athena:ListQueryExecutions",
                 "athena:GetQueryExecution",
                 "athena:GetQueryResults",
                 "athena:GetQueryResultsStream",
