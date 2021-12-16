@@ -12,7 +12,7 @@ $config = array(
             'uid' => array('1'),
             'eduPersonAffiliation' => array('group1'),
             'email' => 'user1@example.com',
-            'https://aws.amazon.com/SAML/Attributes/Role' => array('arn:aws:iam::111122223333:role/athena-saml-idp,arn:aws:iam::111122223333:saml-provider/athena-saml-idp'),
+            'https://aws.amazon.com/SAML/Attributes/Role' => array('arn:aws:iam::'.getenv('AWS_ACCOUNT_ID').':role/athena-saml-idp,arn:aws:iam::'.getenv('AWS_ACCOUNT_ID').':saml-provider/athena-saml-idp'),
             'https://aws.amazon.com/SAML/Attributes/RoleSessionName' => array('user1'),
         ),
         'user2:user2pass' => array(
