@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::111122223333:saml-provider/athena-saml-idp"
+      },
+      "Action": "sts:AssumeRoleWithSAML",
+      "Condition": {
+        "StringEquals": {
+          "SAML:aud": ["https://signin.aws.amazon.com/saml", "http://localhost:7890/redshift/"],
+          "SAML:iss": "http://localhost:8080/simplesaml/saml2/idp/metadata.php"
+        }
+      }
+    }
+  ]
+}

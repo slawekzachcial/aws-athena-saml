@@ -1,0 +1,27 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "redshift:CreateClusterUser",
+                "redshift:JoinGroup",
+                "redshift:GetClusterCredentials",
+                "redshift:ListSchemas",
+                "redshift:ListTables",
+                "redshift:ListDatabases",
+                "redshift:ExecuteQuery",
+                "redshift:FetchResults",
+                "redshift:CancelQuery",
+                "redshift:DescribeClusters",
+                "redshift:DescribeQuery",
+                "redshift:DescribeTable"
+            ],
+            "Resource": [
+                "arn:aws:redshift:us-east-2:520400067019:cluster:redshift-saml",
+                "arn:aws:redshift:us-east-2:520400067019:dbuser:redshift-saml/${redshift:DBUser}",
+                "arn:aws:redshift:us-east-2:520400067019:dbgroup:redshift-saml/readonly_group",
+                "arn:aws:redshift:us-east-2:520400067019:dbname:redshift-saml/${redshift:DBName}"]
+        }
+    ]
+}
