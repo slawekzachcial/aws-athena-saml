@@ -11,9 +11,6 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-      Tags:
-        - Key: Project
-          Value: athena-saml
 
   EmptyAthenaQueryResultsS3BucketRole:
     Type: 'AWS::IAM::Role'
@@ -170,9 +167,6 @@ Resources:
             <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="${SimpleSAMLphpIdPBaseUrl}/simplesaml/saml2/idp/SSOService.php"/>
           </md:IDPSSODescriptor>
         </md:EntityDescriptor>
-      Tags:
-        - Key: Project
-          Value: athena-saml
 
   AthenaReadOnlyIdPRole:
     Type: 'AWS::IAM::Role'
@@ -193,9 +187,6 @@ Resources:
                 'SAML:iss': !Sub '${SimpleSAMLphpIdPBaseUrl}/simplesaml/saml2/idp/metadata.php'
       ManagedPolicyArns:
         - !Ref AthenaReadOnlyPolicy
-      Tags:
-        - Key: Project
-          Value: athena-saml
 
   AthenaDatabase:
     Type: 'AWS::Glue::Database'
