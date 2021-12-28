@@ -15,6 +15,68 @@ Resources:
         - Key: Project
           Value: athena-saml
 
+  EmptyAthenaQueryResultsS3BucketRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: athena-saml-empty-results-bucket
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: athena-saml-empty-results-bucket
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                  - 's3:DeleteObject'
+                Resource:
+                  - !GetAtt AthenaQueryResultsS3Bucket.Arn
+                  - !Sub
+                      - '${BucketArn}/*'
+                      - { BucketArn: !GetAtt AthenaQueryResultsS3Bucket.Arn }
+
+  EmptyAthenaQueryResultsS3BucketLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          import json, boto3
+          import cfnresponse
+
+          def lambda_handler(event, context):
+              try:
+                  bucket = event['ResourceProperties']['BucketName']
+                  if event['RequestType'] == 'Delete':
+                      s3 = boto3.resource('s3')
+                      bucket = s3.Bucket(bucket)
+                      bucket.objects.all().delete()
+
+                  sendResponseCfn(event, context, cfnresponse.SUCCESS)
+              except Exception as e:
+                  sendResponseCfn(event, context, cfnresponse.FAILED)
+
+          def sendResponseCfn(event, context, responseStatus):
+              responseData = {}
+              responseData['Data'] = {}
+              cfnresponse.send(event, context, responseStatus, responseData)
+      Handler: 'index.lambda_handler'
+      Runtime: 'python3.9'
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt EmptyAthenaQueryResultsS3BucketRole.Arn
+
+  EmptyAthenaQueryResultsS3BucketOnDelete:
+    Type: 'Custom::emptyBucket'
+    Properties:
+      ServiceToken: !GetAtt EmptyAthenaQueryResultsS3BucketLambda.Arn
+      BucketName: !Ref AthenaQueryResultsS3Bucket
+
   AthenaReadOnlyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
