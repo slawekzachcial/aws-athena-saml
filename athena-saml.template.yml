@@ -1,0 +1,274 @@
+AWSTemplateFormatVersion: 2010-09-09
+Metadata:
+  'AWS::CloudFormation::Designer':
+    c9ff3e2a-3b01-43d5-8357-e4e7e8586f80:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 289
+        'y': 181
+      z: 0
+      embeds: []
+    ffeba993-7d6c-4f3c-8327-3f1b32cd24fc:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 470
+        'y': 180
+      z: 0
+      embeds: []
+    38e327a1-48ec-4938-bc93-0f08debfd03f:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 630
+        'y': 310
+      z: 0
+      embeds: []
+      dependson:
+        - ffeba993-7d6c-4f3c-8327-3f1b32cd24fc
+    a610df93-62aa-46c0-8793-255699325b21:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 630
+        'y': 180
+      z: 0
+      embeds: []
+    22ec200f-865a-4e60-82be-1369f19a1499:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 290
+        'y': 310
+      z: 0
+      embeds: []
+    e83b0055-d1c6-42ad-bd6a-90f686add1e2:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 390
+        'y': 310
+      z: 0
+      embeds: []
+Resources:
+  AthenaQueryResultsS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref AthenaQueryResultsS3BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Project
+          Value: athena-saml
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c9ff3e2a-3b01-43d5-8357-e4e7e8586f80
+  AthenaReadOnlyPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: athena-readonly
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'athena:GetDatabase'
+              - 'athena:GetDataCatalog'
+              - 'athena:GetTableMetadata'
+              - 'athena:ListDatabases'
+              - 'athena:ListDataCatalogs'
+              - 'athena:ListTableMetadata'
+              - 'athena:ListWorkGroups'
+              - 'athena:ListQueryExecutions'
+              - 'athena:GetQueryExecution'
+              - 'athena:GetQueryResults'
+              - 'athena:GetQueryResultsStream'
+              - 'athena:GetWorkGroup'
+              - 'athena:StartQueryExecution'
+              - 'athena:StopQueryExecution'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'glue:GetDatabase'
+              - 'glue:GetDatabases'
+              - 'glue:GetTable'
+              - 'glue:GetTables'
+              - 'glue:GetPartition'
+              - 'glue:GetPartitions'
+              - 'glue:BatchGetPartition'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutBucketPublicAccessBlock'
+              - 's3:AbortMultipartUpload'
+              - 's3:CreateBucket'
+              - 's3:ListBucket'
+              - 's3:GetBucketLocation'
+              - 's3:ListMultipartUploadParts'
+            Resource:
+              - !GetAtt AthenaQueryResultsS3Bucket.Arn
+              - !Sub
+                  - '${BucketArn}/*'
+                  - { BucketArn: !GetAtt AthenaQueryResultsS3Bucket.Arn }
+          - Effect: Allow
+            Action:
+              - 's3:GetObject'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:ListBucket'
+              - 's3:GetBucketLocation'
+              - 's3:ListMultipartUploadParts'
+            Resource:
+              - !Sub 'arn:aws:s3:::athena-examples-${AWS::Region}'
+              - !Sub 'arn:aws:s3:::athena-examples-${AWS::Region}/*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ffeba993-7d6c-4f3c-8327-3f1b32cd24fc
+    DependsOn:
+      - AthenaQueryResultsS3Bucket
+  SimpleSAMLphpIdP:
+    Type: 'AWS::IAM::SAMLProvider'
+    Properties:
+      Name: athena-saml-idp
+      SamlMetadataDocument: !Sub >
+        <?xml version="1.0"?>
+
+        <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+        xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+        entityID="${SimpleSAMLphpIdPBaseUrl}/simplesaml/saml2/idp/metadata.php">
+          <md:IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+            <md:KeyDescriptor use="signing">
+              <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                  <ds:X509Certificate>MIIDXTCCAkWgAwIBAgIJALmVVuDWu4NYMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMTYxMjMxMTQzNDQ3WhcNNDgwNjI1MTQzNDQ3WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzUCFozgNb1h1M0jzNRSCjhOBnR+uVbVpaWfXYIR+AhWDdEe5ryY+CgavOg8bfLybyzFdehlYdDRgkedEB/GjG8aJw06l0qF4jDOAw0kEygWCu2mcH7XOxRt+YAH3TVHa/Hu1W3WjzkobqqqLQ8gkKWWM27fOgAZ6GieaJBN6VBSMMcPey3HWLBmc+TYJmv1dbaO2jHhKh8pfKw0W12VM8P1PIO8gv4Phu/uuJYieBWKixBEyy0lHjyixYFCR12xdh4CA47q958ZRGnnDUGFVE1QhgRacJCOZ9bd5t9mr8KLaVBYTCJo5ERE8jymab5dPqe5qKfJsCZiqWglbjUo9twIDAQABo1AwTjAdBgNVHQ4EFgQUxpuwcs/CYQOyui+r1G+3KxBNhxkwHwYDVR0jBBgwFoAUxpuwcs/CYQOyui+r1G+3KxBNhxkwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAAiWUKs/2x/viNCKi3Y6blEuCtAGhzOOZ9EjrvJ8+COH3Rag3tVBWrcBZ3/uhhPq5gy9lqw4OkvEws99/5jFsX1FJ6MKBgqfuy7yh5s1YfM0ANHYczMmYpZeAcQf2CGAaVfwTTfSlzNLsF2lW/ly7yapFzlYSJLGoVE+OHEu8g5SlNACUEfkXw+5Eghh+KzlIN7R6Q7r2ixWNFBC/jWf7NKUfJyX8qIG5md1YUeT6GBW9Bm2/1/RiO24JTaYlfLdKK9TYb8sG5B+OLab2DImG99CJ25RkAcSobWNF5zD0O6lgOo3cEdB/ksCq3hmtlC/DlLZ/D8CJ+7VuZnS1rR2naQ==</ds:X509Certificate>
+                </ds:X509Data>
+              </ds:KeyInfo>
+            </md:KeyDescriptor>
+            <md:KeyDescriptor use="encryption">
+              <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                  <ds:X509Certificate>MIIDXTCCAkWgAwIBAgIJALmVVuDWu4NYMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMTYxMjMxMTQzNDQ3WhcNNDgwNjI1MTQzNDQ3WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzUCFozgNb1h1M0jzNRSCjhOBnR+uVbVpaWfXYIR+AhWDdEe5ryY+CgavOg8bfLybyzFdehlYdDRgkedEB/GjG8aJw06l0qF4jDOAw0kEygWCu2mcH7XOxRt+YAH3TVHa/Hu1W3WjzkobqqqLQ8gkKWWM27fOgAZ6GieaJBN6VBSMMcPey3HWLBmc+TYJmv1dbaO2jHhKh8pfKw0W12VM8P1PIO8gv4Phu/uuJYieBWKixBEyy0lHjyixYFCR12xdh4CA47q958ZRGnnDUGFVE1QhgRacJCOZ9bd5t9mr8KLaVBYTCJo5ERE8jymab5dPqe5qKfJsCZiqWglbjUo9twIDAQABo1AwTjAdBgNVHQ4EFgQUxpuwcs/CYQOyui+r1G+3KxBNhxkwHwYDVR0jBBgwFoAUxpuwcs/CYQOyui+r1G+3KxBNhxkwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAAiWUKs/2x/viNCKi3Y6blEuCtAGhzOOZ9EjrvJ8+COH3Rag3tVBWrcBZ3/uhhPq5gy9lqw4OkvEws99/5jFsX1FJ6MKBgqfuy7yh5s1YfM0ANHYczMmYpZeAcQf2CGAaVfwTTfSlzNLsF2lW/ly7yapFzlYSJLGoVE+OHEu8g5SlNACUEfkXw+5Eghh+KzlIN7R6Q7r2ixWNFBC/jWf7NKUfJyX8qIG5md1YUeT6GBW9Bm2/1/RiO24JTaYlfLdKK9TYb8sG5B+OLab2DImG99CJ25RkAcSobWNF5zD0O6lgOo3cEdB/ksCq3hmtlC/DlLZ/D8CJ+7VuZnS1rR2naQ==</ds:X509Certificate>
+                </ds:X509Data>
+              </ds:KeyInfo>
+            </md:KeyDescriptor>
+            <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="${SimpleSAMLphpIdPBaseUrl}/simplesaml/saml2/idp/SingleLogoutService.php"/>
+            <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>
+            <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="${SimpleSAMLphpIdPBaseUrl}/simplesaml/saml2/idp/SSOService.php"/>
+          </md:IDPSSODescriptor>
+        </md:EntityDescriptor>
+      Tags:
+        - Key: Project
+          Value: athena-saml
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a610df93-62aa-46c0-8793-255699325b21
+  AthenaReadOnlyIdPRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: athena-saml-idp
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref SimpleSAMLphpIdP
+            Action: 'sts:AssumeRoleWithSAML'
+            Condition:
+              StringEquals:
+                'SAML:aud':
+                  - 'https://signin.aws.amazon.com/saml'
+                  - 'http://localhost:7890/athena'
+                'SAML:iss': !Sub '${SimpleSAMLphpIdPBaseUrl}/simplesaml/saml2/idp/metadata.php'
+      ManagedPolicyArns:
+        - !Ref AthenaReadOnlyPolicy
+      Tags:
+        - Key: Project
+          Value: athena-saml
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 38e327a1-48ec-4938-bc93-0f08debfd03f
+    DependsOn:
+      - SimpleSAMLphpIdP
+      - AthenaReadOnlyPolicy
+  AthenaDatabase:
+    Type: 'AWS::Glue::Database'
+    Properties:
+      CatalogId: !Ref 'AWS::AccountId'
+      DatabaseInput:
+        Name: !Ref AthenaDatabaseName
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 22ec200f-865a-4e60-82be-1369f19a1499
+  CloudFrontLogsTable:
+    Type: 'AWS::Glue::Table'
+    Properties:
+      CatalogId: !Ref 'AWS::AccountId'
+      DatabaseName: !Ref AthenaDatabase
+      TableInput:
+        Name: cloudfront_logs
+        TableType: EXTERNAL_TABLE
+        StorageDescriptor:
+          Location: !Sub 's3://athena-examples-${AWS::Region}/cloudfront/plaintext/'
+          Columns:
+            - Name: Date
+              Type: date
+            - Name: Time
+              Type: string
+            - Name: Location
+              Type: string
+            - Name: Bytes
+              Type: int
+            - Name: RequestIP
+              Type: string
+            - Name: Method
+              Type: string
+            - Name: Host
+              Type: string
+            - Name: Uri
+              Type: string
+            - Name: Status
+              Type: int
+            - Name: Referrer
+              Type: string
+            - Name: os
+              Type: string
+            - Name: Browser
+              Type: string
+            - Name: BrowserVersion
+              Type: string
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.serde2.RegexSerDe
+            Parameters:
+              input.regex: ^(?!#)([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+[^\(]+[\(]([^\;]+).*\%20([^\/]+)[\/](.*)$
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e83b0055-d1c6-42ad-bd6a-90f686add1e2
+    DependsOn:
+      - AthenaDatabase
+Parameters:
+  AthenaQueryResultsS3BucketName:
+    Type: String
+    Description: Name of the S3 bucket where Athena query results will be stored
+  AthenaDatabaseName:
+    Type: String
+    Default: mydatabase
+    Description: Name of the database in Athena where cloudfront_logs table is hosted
+  SimpleSAMLphpIdPBaseUrl:
+    Type: String
+    Default: 'http://localhost:8080'
+    Description: Protocol, hostname and port number, all in URL format, where SimpleSAMLphp runs
