@@ -138,8 +138,6 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: ffeba993-7d6c-4f3c-8327-3f1b32cd24fc
-    DependsOn:
-      - AthenaQueryResultsS3Bucket
   SimpleSAMLphpIdP:
     Type: 'AWS::IAM::SAMLProvider'
     Properties:
@@ -201,9 +199,6 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 38e327a1-48ec-4938-bc93-0f08debfd03f
-    DependsOn:
-      - SimpleSAMLphpIdP
-      - AthenaReadOnlyPolicy
   AthenaDatabase:
     Type: 'AWS::Glue::Database'
     Properties:
@@ -258,8 +253,6 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: e83b0055-d1c6-42ad-bd6a-90f686add1e2
-    DependsOn:
-      - AthenaDatabase
 Parameters:
   AthenaQueryResultsS3BucketName:
     Type: String
