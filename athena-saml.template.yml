@@ -1,63 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
-Metadata:
-  'AWS::CloudFormation::Designer':
-    c9ff3e2a-3b01-43d5-8357-e4e7e8586f80:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 289
-        'y': 181
-      z: 0
-      embeds: []
-    ffeba993-7d6c-4f3c-8327-3f1b32cd24fc:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 470
-        'y': 180
-      z: 0
-      embeds: []
-    38e327a1-48ec-4938-bc93-0f08debfd03f:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 630
-        'y': 310
-      z: 0
-      embeds: []
-      dependson:
-        - ffeba993-7d6c-4f3c-8327-3f1b32cd24fc
-    a610df93-62aa-46c0-8793-255699325b21:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 630
-        'y': 180
-      z: 0
-      embeds: []
-    22ec200f-865a-4e60-82be-1369f19a1499:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 290
-        'y': 310
-      z: 0
-      embeds: []
-    e83b0055-d1c6-42ad-bd6a-90f686add1e2:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 390
-        'y': 310
-      z: 0
-      embeds: []
+
 Resources:
+
   AthenaQueryResultsS3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
@@ -70,9 +14,7 @@ Resources:
       Tags:
         - Key: Project
           Value: athena-saml
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: c9ff3e2a-3b01-43d5-8357-e4e7e8586f80
+
   AthenaReadOnlyPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
@@ -135,9 +77,7 @@ Resources:
             Resource:
               - !Sub 'arn:aws:s3:::athena-examples-${AWS::Region}'
               - !Sub 'arn:aws:s3:::athena-examples-${AWS::Region}/*'
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: ffeba993-7d6c-4f3c-8327-3f1b32cd24fc
+
   SimpleSAMLphpIdP:
     Type: 'AWS::IAM::SAMLProvider'
     Properties:
@@ -171,9 +111,7 @@ Resources:
       Tags:
         - Key: Project
           Value: athena-saml
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: a610df93-62aa-46c0-8793-255699325b21
+
   AthenaReadOnlyIdPRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -196,18 +134,14 @@ Resources:
       Tags:
         - Key: Project
           Value: athena-saml
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 38e327a1-48ec-4938-bc93-0f08debfd03f
+
   AthenaDatabase:
     Type: 'AWS::Glue::Database'
     Properties:
       CatalogId: !Ref 'AWS::AccountId'
       DatabaseInput:
         Name: !Ref AthenaDatabaseName
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 22ec200f-865a-4e60-82be-1369f19a1499
+
   CloudFrontLogsTable:
     Type: 'AWS::Glue::Table'
     Properties:
@@ -250,9 +184,7 @@ Resources:
             SerializationLibrary: org.apache.hadoop.hive.serde2.RegexSerDe
             Parameters:
               input.regex: ^(?!#)([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+([^ ]+)\s+[^\(]+[\(]([^\;]+).*\%20([^\/]+)[\/](.*)$
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: e83b0055-d1c6-42ad-bd6a-90f686add1e2
+
 Parameters:
   AthenaQueryResultsS3BucketName:
     Type: String
