@@ -218,6 +218,42 @@ IdP and the JDBC driver, behind the scene, retrieved temporary keys to give us
 the appropriate access to the AWS resources, as defined in IAM role we signed-in
 with.
 
+### DBeaver Community
+
+We will use [DBeaver Community](https://dbeaver.io/) as an example to show how
+to use AWS SAML federation, leveraging the JDBC connectivity described in the
+[section above](#jdbc).
+
+Once we have it installed let's define our Athena connection:
+* Menu: `Database` / `New Database Connection` / `Athena` / `Next`
+* Button `Edit Driver Settings` - on the `Libraries` tab we need to add the
+  JDBC driver with AWS SDK JAR file (same as in [JDBC](#jdbc) section)
+* Back on the `Connection Settings` page we need to specify the same `Region` as 
+  where we created AWS resources and `S3 Location` using the name of the S3
+  bucket we have stored in `BUCKET_NAME` variable, e.g.  `s3://athena-saml-query-results`.
+* On the `Driver Properties` tab we need to set the value of `AwsCredentialsProviderClass`
+  driver property to `com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider`
+* Finally on that same page we need to add a new `User Property` called
+  `login_url` and set its value to `http://localhost:8080/simplesaml/redirect.php`
+
+Once all these settings done we should be able to `Test Connection`. Doing
+so opens a new browser window with our IdP sign-in page. Signing-in as
+`user1` (password: `user1pass`) should allow to open connection.
+
+With a working connection we can now execute our test query and get results
+similar to previous sections:
+
+```sql
+SELECT os, COUNT(*) count
+FROM cloudfront_logs
+WHERE date BETWEEN date '2014-07-05' AND date '2014-08-05'
+GROUP BY os
+```
+
+Note that once again we could use our IdP to authenticate and the JDBC driver
+behind the scene used SAML federation to retrieve the temporary keys and allow
+the connection to open.
+
 ## Breaking it Down
 
 > Coming soon...
