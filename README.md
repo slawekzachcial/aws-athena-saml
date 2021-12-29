@@ -29,7 +29,7 @@ Table of Contents
   [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html).
   Note that AWS CLI is not a requirement as all AWS setup can be done from AWS
   console.
-* The guide uses SimpleSAMLphp Docker container created by [Kristoph Junge](https://github.com/kristophjunge/docker-test-saml-idp).
+* The guide uses SimpleSAMLphp Docker container created by [Kristoph Junge](https://github.com/kristophjunge/docker-test-saml-idp)
   as SAML Identity Provider. We will need a working [Docker environment](https://www.docker.com/products/docker-desktop).
   If you are running Linux look for instructions how to install Docker in your
   distribution.
@@ -51,10 +51,9 @@ openssl req \
   -subj '/CN=localhost'
 ```
 
-Let's open a new terminal and our start SimpleSAMLphp IdP.  For that we will
-need the number of our AWS account and use this value in the command below
-instead of `123456789012`. The underlying script uses the certificate and the
-key we just generated.
+Let's open a new terminal and start our SimpleSAMLphp IdP. For that we will
+need the number of our AWS account to replace the `123456789012` value below.
+The underlying script uses the certificate and the key we just generated.
 
 ```sh
 AWS_ACCOUNT_ID=123456789012 ./saml-idp.sh
@@ -68,7 +67,7 @@ command instead:
 AWS_ACCOUNT_ID=123456789012 PORT=9090 ./saml-idp.sh
 ```
 
-We now need to download our IdP metadata that will get included in CloudFormation
+We now need to download our IdP metadata that will get injected into CloudFormation
 template when creating AWS identity provider:
 
 ```sh
@@ -89,12 +88,12 @@ export BUCKET_NAME=athena-saml-query-results
 We also need to inject the IdP metadata XML in the CloudFormation template.
 CloudFormation does not provide an easy way to inject or reference a local file
 content without installing 3rd party tools. For our needs we will use the good
-old `sed` (Credits: [Ben Pingilley](https://stackoverflow.com/a/33398190) ).
+old `sed` (Credits: [Ben Pingilley](https://stackoverflow.com/a/33398190)).
 
 ```sh
 sed -e 's/^/        /' idp-metadata.xml \
   | sed -e "/__METADATA_XML__/r /dev/stdin" -e "//d" athena-saml.partial-template.yml \
-  > athena-saml.template.xml
+  > athena-saml.template.yml
 ```
 
 The first `sed` creates the appropriate indentation required by the YAML file.

@@ -141,8 +141,8 @@ Resources:
     Type: 'AWS::IAM::SAMLProvider'
     Properties:
       Name: athena-saml-idp
+      # Replace the marker below with the content of SimpleSAMLphp metadata XML
       SamlMetadataDocument: !Sub >
-        # Replace the marker below with the content of SimpleSAMLphp metadata XML
         __METADATA_XML__
 
   AthenaReadOnlyIdPRole:
