@@ -135,24 +135,26 @@ Let's open the following URL to sign-in to the IdP:
 http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices
 
 There are 2 users we can use (defined in [aws-authsources.php](aws-authsources.php)):
-1. `user1` (password: `user1pass`) has access to AWS console.
+1. `user1` (password: `user1pass`) has access to AWS console and can run Athena queries.
 2. `user2` (password: `user2pass`) is able to authenticate but has no access to AWS console.
 
-`urn:amazon:webservices` is sevice provider entity ID as defined in [aws-saml20-sp-remote.php](aws-saml20-sp-remote.php).
+`urn:amazon:webservices` is the entity ID of AWS service provider that we
+defined in [aws-saml20-sp-remote.php](aws-saml20-sp-remote.php).
 
 Signing-in as `user1` should allow us get access to AWS console. We can now go
 to [Athena service](https://console.aws.amazon.com/athena/home). We need to make
 sure we selected the same AWS region as where our stack was created.
 
-To do a test follow the steps from [Athena Getting Started](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
+To do a test we will follow the steps from [Athena Getting
+Started](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
 guide.
 
-First step is to configure S3 bucket where query results will be stored - we
+First we need to configure S3 bucket where query results will be stored - we
 put there the same name as the value of our `BUCKET_NAME` variable, e.g.
 `s3://athena-saml-query-results`.
 
-We can skip the database and table creation - this has already been done when
-creating CloudFormation stack.
+We can skip the database and table creation - our CloudFormation stack already
+took care of this.
 
 We can finally run a test query, e.g.
 
@@ -182,15 +184,16 @@ javac -classpath SimbaAthenaJDBC-2.0.25.1001/AthenaJDBC42_2.0.25.1001.jar:. Athe
 ```
 
 We can finally run our test - it will execute the same query as in the
-[AWS Console](#aws-console) above:
+[AWS Console](#aws-console) example above:
 
 ```sh
 java -cp SimbaAthenaJDBC-2.0.25.1001/AthenaJDBC42_2.0.25.1001.jar:. AthenaSamlQuery
 ```
 
-Before we see any output a new browser window will be open with our IdP sign-in
-page. Signing-in as `user1` (password: `user1pass`), after couple seconds we
-should get a result similar to this:
+Before we see any output, a new browser window should open with our IdP sign-in
+page. Successfully signing-in as `user1` (password: `user1pass`) should get us
+to a "thank you page" (we can close it), and after couple seconds in the terminal
+where we run our Java class we should get a result similar to this:
 
 ```
 log4j:WARN No appenders could be found for logger (com.simba.athena.amazonaws.AmazonWebServiceClient).
