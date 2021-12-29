@@ -15,7 +15,7 @@ query from a Java application using SAML federation with Athena JDBC driver.
 Table of Contents
 * [Prerequisites](#prerequisites)
 * [Setup](#setup)
-* [Tests](#tests)
+* [In Action](#in-action)
 * [Breaking it Down](#breaking-it-down)
 * [Clean-up](#clean-up)
 
@@ -123,13 +123,86 @@ To wait for the creation to complete:
 aws cloudformation wait stack-create-complete --stack-name Athena-SAML
 ```
 
-## Tests
+## In Action
 
-> Coming soon...
+Below are 2 examples of how the SAML federation works. We will explain the details
+in the [Breaking it Down](#breaking-it-down) section.
 
-### Console
+### AWS Console
+
+Let's open the following URL to sign-in to the IdP:
+
+http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices
+
+There are 2 users we can use (defined in [aws-authsources.php](aws-authsources.php)):
+1. `user1` (password: `user1pass`) has access to AWS console.
+2. `user2` (password: `user2pass`) is able to authenticate but has no access to AWS console.
+
+`urn:amazon:webservices` is sevice provider entity ID as defined in [aws-saml20-sp-remote.php](aws-saml20-sp-remote.php).
+
+Signing-in as `user1` should allow us get access to AWS console. We can now go
+to [Athena service](https://console.aws.amazon.com/athena/home). We need to make
+sure we selected the same AWS region as where our stack was created.
+
+To do a test follow the steps from [Athena Getting Started](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
+guide.
+
+First step is to configure S3 bucket where query results will be stored - we
+put there the same name as the value of our `BUCKET_NAME` variable, e.g.
+`s3://athena-saml-query-results`.
+
+We can skip the database and table creation - this has already been done when
+creating CloudFormation stack.
+
+We can finally run a test query, e.g.
+
+```sql
+SELECT os, COUNT(*) count
+FROM cloudfront_logs
+WHERE date BETWEEN date '2014-07-05' AND date '2014-08-05'
+GROUP BY os
+```
+
+We should get results similar to the ones in the Athena guide.
 
 ### JDBC
+
+To perform JDBC test you will need a working Java Development Kit (JDK) as we
+need to compile and run our [AthenaSamlQuery.java](AthenaSamlQuery.java) class.
+
+We also need Athena JDBC driver with AWS SDK that we can download from
+[this page](https://docs.aws.amazon.com/athena/latest/ug/connect-with-jdbc.html).
+The following commands assume the driver JAR file is available in our project
+directory in `SimbaAthenaJDBC-2.0.25.1001/AthenaJDBC42_2.0.25.1001.jar`.
+
+Let's first compile our class:
+
+```sh
+javac -classpath SimbaAthenaJDBC-2.0.25.1001/AthenaJDBC42_2.0.25.1001.jar:. AthenaSamlQuery.java
+```
+
+We can finally run our test - it will execute the same query as in the
+[AWS Console](#aws-console) above:
+
+```sh
+java -cp SimbaAthenaJDBC-2.0.25.1001/AthenaJDBC42_2.0.25.1001.jar:. AthenaSamlQuery
+```
+
+Before we see any output a new browser window will be open with our IdP sign-in
+page. Signing-in as `user1` (password: `user1pass`), after couple seconds we
+should get a result similar to this:
+
+```
+log4j:WARN No appenders could be found for logger (com.simba.athena.amazonaws.AmazonWebServiceClient).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+OS: iOS     , Count: 794
+OS: Android , Count: 855
+OS: MacOS   , Count: 852
+OS: Windows , Count: 883
+OS: OSX     , Count: 799
+OS: Linux   , Count: 813
+```
 
 ## Breaking it Down
 
@@ -137,7 +210,7 @@ aws cloudformation wait stack-create-complete --stack-name Athena-SAML
 
 ## Clean-up
 
-To clean-up resources stop the SimpleSAMLphp container and the delete AWS
+To clean-up resources stop the SimpleSAMLphp container and delete AWS
 resources:
 
 ```sh
