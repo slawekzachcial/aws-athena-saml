@@ -167,6 +167,11 @@ GROUP BY os
 
 We should get results similar to the ones in the Athena guide.
 
+Note that the IAM role we signed in with (role and its corresponding policy is
+defined in our CloudFormation template) using SAML federation gives us only
+access to run Athena queries but no other AWS service. This could be adjusted
+by adding more managed policies to our IAM role.
+
 ### JDBC
 
 To perform JDBC test you will need a working Java Development Kit (JDK) as we
@@ -206,6 +211,12 @@ OS: Windows , Count: 883
 OS: OSX     , Count: 799
 OS: Linux   , Count: 813
 ```
+
+Note that with SAML federation in place we did not need to provide any AWS
+Access Key Id / Secret Access Key - the authentication was performed using our
+IdP and the JDBC driver, behind the scene, retrieved temporary keys to give us
+the appropriate access to the AWS resources, as defined in IAM role we signed-in
+with.
 
 ## Breaking it Down
 
