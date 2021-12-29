@@ -12,4 +12,6 @@ docker run \
     --volume $PWD/aws-authsources.php:/var/www/simplesamlphp/config/authsources.php:ro \
     --volume $PWD/aws-saml20-sp-remote.php:/var/www/simplesamlphp/metadata/saml20-sp-remote.php:ro \
     --volume $PWD/redirect.php:/var/www/simplesamlphp/www/redirect.php:ro \
+    --volume $PWD/server.crt:/var/www/simplesamlphp/cert/server.crt:ro \
+    --volume $PWD/server.pem:/var/www/simplesamlphp/cert/server.pem:ro \
     kristophjunge/test-saml-idp

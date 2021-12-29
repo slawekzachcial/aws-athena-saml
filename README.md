@@ -3,9 +3,14 @@
 This repository shows an example how to configure SAML federation for AWS Athena.
 
 The example uses [SimpleSAMLphp](https://simplesamlphp.org/) as SAML identity
-provider. Once the configuration is complete you will be able to sign-in to AWS
-console and execute Ahtena sample query. You will also be able to execute this
+provider. Once our configuration is complete we will be able to sign-in to AWS
+console and execute Athena sample query. We will also be able to execute this
 query from a Java application using SAML federation with Athena JDBC driver.
+
+> IMPORTANT
+>
+> This guide is meant to show a working AWS SAML federation example but it is not
+> suited for production use. Use it at your own risk.
 
 Table of Contents
 * [Prerequisites](#prerequisites)
@@ -17,21 +22,63 @@ Table of Contents
 ## Prerequisites
 
 * The AWS resources are managed using [CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html)
-  template. You will therefore need access to AWS account where you can create
-  the stack. The stack can be created using AWS console or AWS CLI.
+  template. We will need access to AWS account where we can create the stack.
+  The stack can be created using AWS console or AWS CLI.
 * The guide shows AWS CLI commands to create and delete the CloudFormation
-  stack. If you want to go the CLI-way you will need a working and configured
+  stack. To go the CLI-way we will need a working and configured
   [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html).
-  Note that AWS CLI is not a requirement as everything can also be done from AWS
+  Note that AWS CLI is not a requirement as all AWS setup can be done from AWS
   console.
 * The guide uses SimpleSAMLphp Docker container created by [Kristoph Junge](https://github.com/kristophjunge/docker-test-saml-idp).
-  as SAML Identity Provider. You will therefore need a working [Docker environment](https://www.docker.com/products/docker-desktop).
+  as SAML Identity Provider. We will need a working [Docker environment](https://www.docker.com/products/docker-desktop).
   If you are running Linux look for instructions how to install Docker in your
   distribution.
 
 ## Setup
 
-Before creating AWS resources first set an environment variable containing 
+### SimpleSAMLphp Identity Provider
+
+To ensure our SimpleSAMLphp identity provider (IdP) is unique first thing is to
+generate a certificate that will be used to sign SAML response:
+
+```sh
+openssl req \
+  -new -x509 -nodes \
+  -newkey rsa:3072 \
+  -days 7 \
+  -out server.crt \
+  -keyout server.pem \
+  -subj '/CN=localhost'
+```
+
+Let's open a new terminal and our start SimpleSAMLphp IdP.  For that we will
+need the number of our AWS account and use this value in the command below
+instead of `123456789012`. The underlying script uses the certificate and the
+key we just generated.
+
+```sh
+AWS_ACCOUNT_ID=123456789012 ./saml-idp.sh
+```
+
+The default configuration assumes SimpleSAMLphp runs on port `8080`.
+If you want to use a different port (e.g. 9090) start SimpleSAMLphp using this
+command instead:
+
+```sh
+AWS_ACCOUNT_ID=123456789012 PORT=9090 ./saml-idp.sh
+```
+
+We now need to download our IdP metadata that will get included in CloudFormation
+template when creating AWS identity provider:
+
+```sh
+curl http://localhost:8080/simplesaml/saml2/idp/metadata.php \
+  --output idp-metadata.xml
+```
+
+### AWS Resources
+
+Before creating AWS resources first set an environment variable containing
 [name of S3 Bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
 where Athena query results will be stored:
 
@@ -39,7 +86,22 @@ where Athena query results will be stored:
 export BUCKET_NAME=athena-saml-query-results
 ```
 
-Then create AWS resources:
+We also need to inject the IdP metadata XML in the CloudFormation template.
+CloudFormation does not provide an easy way to inject or reference a local file
+content without installing 3rd party tools. For our needs we will use the good
+old `sed` (Credits: [Ben Pingilley](https://stackoverflow.com/a/33398190) ).
+
+```sh
+sed -e 's/^/        /' idp-metadata.xml \
+  | sed -e "/__METADATA_XML__/r /dev/stdin" -e "//d" athena-saml.partial-template.yml \
+  > athena-saml.template.xml
+```
+
+The first `sed` creates the appropriate indentation required by the YAML file.
+Its output is then sent to the 2nd `sed` to replace the marker `__METADATA_XML__`
+and create `athena-saml.template.yml`.
+
+We can finally create AWS resources:
 
 ```sh
 aws cloudformation create-stack \
@@ -56,30 +118,11 @@ need to explicitly acknowledge that using the appropriate capability. Where
 possible the created resources will be tagged with `Project=athena-saml`.
 Finally, we need to specify a unique S3 bucket name.
 
-You may want to wait until the creation is complete:
+To wait for the creation to complete:
 
 ```sh
 aws cloudformation wait stack-create-complete --stack-name Athena-SAML
 ```
-
-Once AWS resource creation is complete you can start SimpleSAMLphp Identity Provider.
-For that you will need the number of your AWS account and use this value in the
-command below instead of `123456789012`.
-
-```sh
-AWS_ACCOUNT_ID=123456789012 ./saml-idp.sh
-```
-
-The default configuration assumes SimpleSAMLphp runs on port `8080`.
-If you want to use a different port (e.g. 9090):
-* Replace the last line of `create-stack` with the following:
-  ```sh
-  --parameters ParameterKey=AthenaQueryResultsS3BucketName,ParameterValue=${BUCKET_NAME} ParameterKey=SimpleSAMLphpIdPBaseUrl,ParameterValue=http://localhost:9090
-  ```
-* Start SimpleSAMLphp using this command instead:
-  ```sh
-  AWS_ACCOUNT_ID=123456789012 PORT=9090 ./saml-idp.sh
-  ```
 
 ## Tests
 

@@ -1,3 +1,7 @@
 *.class
 *.zip
 SimbaAthenaJDBC*/
+*.crt
+*.pem
+idp-metadata.xml
+athena-saml.template.yml
