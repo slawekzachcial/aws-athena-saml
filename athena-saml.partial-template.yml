@@ -169,7 +169,7 @@ Resources:
     Properties:
       CatalogId: !Ref 'AWS::AccountId'
       DatabaseInput:
-        Name: !Ref AthenaDatabaseName
+        Name: mydatabase
 
   CloudFrontLogsTable:
     Type: 'AWS::Glue::Table'
@@ -218,7 +218,3 @@ Parameters:
   AthenaQueryResultsS3BucketName:
     Type: String
     Description: Name of the S3 bucket where Athena query results will be stored
-  AthenaDatabaseName:
-    Type: String
-    Default: mydatabase
-    Description: Name of the database in Athena where cloudfront_logs table is hosted
