@@ -365,7 +365,7 @@ SAML response:
 > service provider specified in its metadata. If you want to send more attributes
 > you either have to define a custom [authentification processing filter](https://simplesamlphp.org/docs/stable/simplesamlphp-authproc)
 > or manually update the `attributes` array (add more attributes) in service
-> provider metadata in `saml20-sp-remote.php` file.
+> provider metadata in `idp/saml20-sp-remote.php` file.
 
 ### JDBC Driver Trick
 
@@ -390,7 +390,7 @@ jdbc:awsathena://AwsRegion=us-east-2;Schema=mydatabase;S3OutputLocation=s3://ath
 The value of `AwsCredentialsProviderClass` tells to open a browser window and
 show the page specified in `login_url` parameter.
 
-> Note: [login-jdbc.php](login-jdbc.php) is a workaround as I could not figure out
+> Note: [idp/login-jdbc.php](idp/login-jdbc.php) is a workaround as I could not figure out
 > how to put directly in the connection string the actual sign-in URL
 > http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc.
 > `?` character was causing issues.
