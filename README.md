@@ -297,7 +297,7 @@ Glue resources - we use `AWS::Glue::Database` and `AWS::Glue::Table`.
 
 In order to establish a trust relationship between our SAML IdP and our AWS account
 we need to declare our IdP in AWS. To do that we need to create IAM Identity Provider,
-attach to it an IAM role that the users signing-in via our SAML IdP will get
+attach to it an IAM role that the users signing-in via our SAML IdP will assume
 and the permissions the role gives - in our case a "read-only" access to our
 Athena database.
 
@@ -311,19 +311,18 @@ its responses, we inject the content of the XML replacing `__METADATA_XML__`
 marker in the template file - see [AWS Resources](#aws-resources) for details.
 
 `AthenaReadOnlyIdPRole` - is the IAM role that is attached to our identity provider.
-Users signin-in with our SimpleSAMLphp get this role. The role also contains
+Users signin-in with our SimpleSAMLphp assume this role. The role also contains
 permissions that the user has - in our case possibility to query Athena database.
 
 Our role's `AssumeRolePolicyDocument` has condition specifying that incoming 
 SAML response audience `SAML:aud` must be either `https://signin.aws.amazon.com/saml`
 or `http://localhost:7890/athena`. The first condition is satisfied when we do
 SAML sign-in to AWS Console as described in the [example above](#aws-console).
-
 The 2nd condition is true when [using JDBC driver](#jdbc). We will explain the
 details in the [JDBC Driver Trick](#jdbc-driver-trick) section below.
 
 > Noteworthy: Which user has which roles is defined in the SAML IdP. A user may
-> have more than one role. In that case, after successful sign-in in IdP, AWS
+> have more than one role. In that case, after successful sign-in to IdP, AWS
 > shows an intermediate screen where user needs to select which role in AWS Console
 > she wants to assume.
 
