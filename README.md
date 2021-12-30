@@ -351,11 +351,11 @@ the details in the [JDBC Driver Trick](#jdbc-driver-trick) section below.
 Our SAML users are defined in [aws-authsources.php](aws-authsources.php):
 `user1` has federated access to AWS and `user2` has not.
 
-The federated access for `user1` is accomplished by sending in SAML response,
-upon successful authentication, 2 attributes:
+The federated access for `user1` is accomplished by sending 2 attributes in
+SAML response:
 * `https://aws.amazon.com/SAML/Attributes/Role` - is a list (in our case 1-item
   list) of values having form `<role ARN>,<idp ARN>`. That's where we could
-  specify multiple roles for that same IdP, one of which user would have to select
+  specify multiple roles, one of which our user would have to select
   before accessing AWS Console.
 * `https://aws.amazon.com/SAML/Attributes/RoleSessionName` - is usually the ID
   or email of the user. AWS Console shows in its top right corner the user as
@@ -369,7 +369,42 @@ upon successful authentication, 2 attributes:
 
 ### JDBC Driver Trick
 
+To establish Athena connection JDBC driver needs AWS credentials which are different
+from credentials the user provides when signing into our SAML IdP. SAML users
+do not exist in AWS and they get access there by assuming IAM roles.
 
+The driver retrieves the temporary credentials using AWS [AssumeRoleWithSAML](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.html)
+API, providing the SAML response as input.
+
+To get the SAML response the driver does 2 things:
+1. Opens a browser window with our SAML IdP login page where the user can authenticate.
+2. Starts a temporary server, usually at http://localhost:7890/athena, that receives
+   the SAML response.
+
+Let's look at JDBC driver connection string:
+
+```
+jdbc:awsathena://AwsRegion=us-east-2;Schema=mydatabase;S3OutputLocation=s3://athena-saml-query-results;AwsCredentialsProviderClass=com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider;login_url=http://localhost:8080/simplesaml/redirect.php
+```
+
+The value of `AwsCredentialsProviderClass` tells to open a browser window and
+show the page specified in `login_url` parameter.
+
+> Note: [redirect.php](redirect.php) is a workaround as I could not figure out
+> how to put directly in the connection string the actual sign-in URL
+> http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc.
+> `?` character was causing issues.
+
+In order for the SAML response to be sent to the driver temporary server we
+need to configure the service provider in SimpleSAMLphp such that it sends the
+SAML response to the URL http://locahost:7890/athena. That is why we defined a
+separate service provider `urn:amazon:webservices:jdbc` that uses that URL as
+`AssertionConsumerService` location.
+
+Finally, we also need to tell AWS that the SAML audience attribute `SAML:aud`
+for the JDBC connections is `http://localhost:7890/athena`. This is done in
+the condtion present in AWS SAML provider IAM role (`AssumeRolePolicyDocument`
+in `AthenaReadOnlyIdPRole` CloudFormation template resource).
 
 ## Clean-up
 
