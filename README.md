@@ -331,7 +331,39 @@ role, which defines what kind of access to AWS services user has.
 
 ### SimpleSAMLphp
 
+In order to establish a trust relationship between our SAML IdP and our AWS account
+SimpleSAMLphp needs AWS SAML metadata, normally available at https://signin.aws.amazon.com/static/saml-metadata.xml.
 
+SimpleSAMLphp stores the metadata as a PHP snippet. To make the conversion from
+XML to PHP we used a built-in converter available at http://localhost:8080/simplesaml/admin/metadata-converter.php
+and stored the results in [aws-saml20-sp-remote.php](aws-saml20-sp-remote.php)
+file.
+
+Note that the file defines 2 almost identical service providers:
+`urn:amazon:webservices` and `urn:amazon:webservices:jdbc` - the former is used
+when accessing AWS Console, and the latter when connecting via JDBC. The only
+difference is the `Location` defined in `AssertionConsumerService` which for
+JDBC connection is `http://localhost:7890/athena`.  We will explain the details
+in the [JDBC Driver Trick](#jdbc-driver-trick) section below.
+
+The users that can authenticate with our SAML IdP are defined in [aws-authsources.php](aws-authsources.php).
+We have 2 users: `user1` has federated access to AWS and `user2` has not.
+
+The federated access for `user1` is accomplished by sending in SAML response,
+upon successful authentication, 2 attributes:
+* `https://aws.amazon.com/SAML/Attributes/Role` - is a list (in our case 1-item
+  list) of values having form `<role ARN>,<idp ARN>`. That's where we could
+  specify multiple roles for that same IdP, one of which user would have to select
+  before accessing AWS Console.
+* `https://aws.amazon.com/SAML/Attributes/RoleSessionName` - is usually the ID
+  or email of the user. AWS Console shows in its top right corner the user as
+  `<idp name>/<role session name>@<aws account>`.
+
+> Noteworthy: SimpleSAMLphp sends back ("releases") only the attributes the
+> service provider specified in its metadata. If you want to send more attribute
+> you either have to define a custom [authentification processing filter](https://simplesamlphp.org/docs/stable/simplesamlphp-authproc)
+> or manually update the `attributes` array (add more attributes) in service
+> provider metadata in `aws-saml20-sp-remote.php` file.
 
 ### JDBC Driver Trick
 
