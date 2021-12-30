@@ -263,30 +263,35 @@ guide, with `mydatabase` database and `cloudfront_logs` table containing AWS
 sample data.
 
 Athena-related resources are defined in [athena-saml.partial-template.yml](athena-saml.partial-template.yml)
-CloudFormation template:
-* `AthenaQueryResultsS3Bucket` - is the S3 bucket where the query results are stored.
-  * `EmptyAthenaQueryResultsS3BucketRole`, `EmptyAthenaQueryResultsS3BucketLambda`,
-    `EmptyAthenaQueryResultsS3BucketOnDelete` - are resources which are not
-    strickly needed for our example. We have them to avoid the need to manually
-    empty the query results S3 bucket before it can be removed when the
-    CloudFormation stack is deleted. We have Lambda function that empties the
-    bucket, IAM role that gives permissions to the Lambda to perform its work,
-    and a custom CloudFormation resource invoked during stack creation and
-    deletion.
-    > Noteworthy: In the Lambda function the line `import cfnresponse` must stand
-    > on its own or otherwise CloudFormation will not package `cfnresponse` module
-    > and the custom resource will hang during stack creation, timing out only
-    > after 1 hour.
-* `AthenaReadOnlyPolicy` - is the IAM policy that provides "read-only" / "query-only"
-  access to our Athena database and related S3 buckets (source data and query
-  results). This policy is later attached to identity provider IAM role.
-* `AthenaDatabase` and `CloudFrontLogsTable` - is our database and table.
-  CloudFormation does not provide Athena resources but rather relies on AWS
-  Glue resources - we use `AWS::Glue::Database` and `AWS::Glue::Table`.
-  > Noteworthy: The regular expression in Getting Started guide uses `\\s` but
-  > the value in `input.regex` parameter in the CloudFormation template must
-  > be `\s`.
+CloudFormation template.
 
+`AthenaQueryResultsS3Bucket` - is the S3 bucket where the query results are stored.
+
+`EmptyAthenaQueryResultsS3BucketRole`, `EmptyAthenaQueryResultsS3BucketLambda`,
+`EmptyAthenaQueryResultsS3BucketOnDelete` - are resources which are not
+strickly needed for our example. We have them to avoid the need to manually
+empty the query results S3 bucket before it can be removed when the
+CloudFormation stack is deleted. We have Lambda function that empties the
+bucket, IAM role that gives Lambda the permissions to perform its work,
+and a custom CloudFormation resource invoked during stack creation and
+deletion.
+
+> Noteworthy: In the Lambda function the line `import cfnresponse` must stand
+> on its own or otherwise CloudFormation will not package `cfnresponse` module
+> and the custom resource will hang during stack creation, timing out only
+> after 1 hour.
+
+`AthenaReadOnlyPolicy` - is the IAM policy that provides "read-only" / "query-only"
+access to our Athena database and related S3 buckets (source data and query
+results). This policy is later attached to identity provider IAM role.
+
+`AthenaDatabase` and `CloudFrontLogsTable` - is our database and table.
+CloudFormation does not provide Athena resources but rather relies on AWS
+Glue resources - we use `AWS::Glue::Database` and `AWS::Glue::Table`.
+
+> Noteworthy: The regular expression in `input.regex` parameter in CloudFormation
+> template is thee same as in Athena Getting Started guide with one difference:
+> Getting Started guide uses `\\s` while CloudFormation template must use `\s`.
 
 
 ## Clean-up
