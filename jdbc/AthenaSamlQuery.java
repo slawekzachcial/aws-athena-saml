@@ -11,7 +11,7 @@ public class AthenaSamlQuery {
         String bucketName = args.length >= 1 ? args[0] : "athena-saml-query-results";
         String idpUrl = args.length >= 2 ? args[1] : "http://localhost:8080";
 
-        String dbUrl = String.format("jdbc:awsathena://AwsRegion=us-east-2;Schema=mydatabase;S3OutputLocation=s3://%s;AwsCredentialsProviderClass=com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider;login_url=%s/simplesaml/redirect.php", bucketName, idpUrl);
+        String dbUrl = String.format("jdbc:awsathena://AwsRegion=us-east-2;Schema=mydatabase;S3OutputLocation=s3://%s;AwsCredentialsProviderClass=com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider;login_url=%s/simplesaml/login-jdbc.php", bucketName, idpUrl);
 
         try(Connection conn = DriverManager.getConnection(dbUrl);
                 Statement stmt = conn.createStatement();
