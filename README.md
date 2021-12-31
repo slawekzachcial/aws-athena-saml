@@ -1,6 +1,6 @@
-# AWS Athena and SAML Federation
+# Amanzon Athena and SAML Federation
 
-This repository shows an example how to configure SAML federation for AWS Athena.
+This repository shows an example how to configure SAML federation for Amanzon Athena.
 
 The example uses [SimpleSAMLphp](https://simplesamlphp.org/) as SAML identity
 provider. Once our configuration is complete we will be able to sign-in to AWS
@@ -18,6 +18,7 @@ Table of Contents
 * [In Action](#in-action)
 * [Breaking it Down](#breaking-it-down)
 * [Clean-up](#clean-up)
+* [Bonus: SAML Federation for Amazon Redshift](#bonus--saml-federation-for-amazon-redshift)
 
 ## Prerequisites
 
@@ -256,7 +257,7 @@ the connection to open.
 
 ## Breaking it Down
 
-### AWS Athena
+### Amazon Athena
 
 Our Athena setup is the same as documented in [Athena Getting Started](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
 guide, with `mydatabase` database and `cloudfront_logs` table containing AWS
@@ -420,3 +421,107 @@ You may want to wait until all resources are deleted:
 ```sh
 aws cloudformation wait stack-delete-complete --stack-name Athena-SAML
 ```
+
+## Bonus: SAML Federation for Amazon Redshift
+
+Amazon Redshift is a fully managed datawarehouse service.
+
+SAML federation for Redshift is similar to the Athena SAML federation described
+in the previous sections, with a few differences.
+
+### AWS IAM Identity Provider
+
+Redshift JDBC driver temporary server that consumes the SAML assertion runs at
+the following URL: `http://localhost:7890/redshift/` (the leading `/` is required).
+
+IAM identity provider's assume role policy document needs to use that URL in
+condition validating SAML attribute `SAML:aud` as shown in
+[redshift/assume-role-policy.json](redshift/assume-role-policy.json).
+
+Redshift "read-only" / "query-only" policy is slightly different as well. The
+access to the database objects (schemas, tables) is managed within the database
+rather than via API. Therefore the identity provider policy permissions grant
+access to automatically create database user, based on data coming in SAML
+assertion, and add this user to the groups also sent in SAML assertion. It also
+needs permission to request temporary credentials for the that user.
+
+An example of such a policy is shown in [redshift/readonly-policy.json](redshift/readonly-policy.json).
+This example assumes that the name of Redshift cluster is `redshift-saml`.
+
+The policy resources also specify the database group `readonly_group` where
+our users will be automatically added upon successful login and user creation.
+This group must exist in the database before users can be added to it and it
+could be created with SQL statements as in [redshift/readonly_group.sql](redshift/readonly_group.sql).
+
+### SimpleSAMLphp
+
+In addition to `https://aws.amazon.com/SAML/Attributes/Role` and `https://aws.amazon.com/SAML/Attributes/RoleSessionName`
+Redshift requires [3 more SAML attributes](https://docs.aws.amazon.com/redshift/latest/mgmt/configuring-saml-assertions.html):
+* `https://redshift.amazon.com/SAML/Attributes/DbUser` - the name of the
+  database user to create. This can be user's email or ID.
+* `https://redshift.amazon.com/SAML/Attributes/AutoCreate` - must be set to `true`
+  to automatically create the database user if she does not exist.
+* `https://redshift.amazon.com/SAML/Attributes/DbGroups` - the list of group
+  names to which the user should be added.
+
+In order for SimpleSAMLphp to sent these attributes in SAML response we need to
+add them to the `attributes` array of our AWS service provider definition in
+`saml20-sp-remote.php`, e.g.
+
+```php
+...
+    18 => 'urn:oid:2.5.4.3',
+    19 => 'https://redshift.amazon.com/SAML/Attributes/DbUser',
+    20 => 'https://redshift.amazon.com/SAML/Attributes/AutoCreate',
+    21 => 'https://redshift.amazon.com/SAML/Attributes/DbGroups',
+  ),
+...
+```
+
+We then also need to add the attributes with their values to the users for which
+we want to grant this access to. This is done in `authsources.php`, e.g.
+
+```php
+...
+  'user3:user3pass' => array(
+      'uid' => array('3'),
+      'eduPersonAffiliation' => array('group2'),
+      'email' => 'user3@example.com',
+      'https://aws.amazon.com/SAML/Attributes/Role' => array('arn:aws:iam::123456789012:role/redshift-saml-idp,arn:aws:iam::123456789012:saml-provider/redshift-saml-idp'),
+      'https://aws.amazon.com/SAML/Attributes/RoleSessionName' => 'user3@example.com',
+      'https://redshift.amazon.com/SAML/Attributes/DbUser' => 'user3@example.com',
+      'https://redshift.amazon.com/SAML/Attributes/AutoCreate' => 'true',
+      'https://redshift.amazon.com/SAML/Attributes/DbGroups' => array('readonly_group'),
+  ),
+...
+
+```
+
+The final step is to update the AWS service provider metatdata in `saml20-sp-remote.php`,
+changing the `Location` of `AssertionConsumerService` to `http://localhost:7890/redshift/`
+(the leading `/` is required).
+
+### Redshift JDBC URL
+
+Redshift JDBC driver installation and configuration details are described on
+[this page](https://docs.aws.amazon.com/redshift/latest/mgmt/jdbc20-install.html).
+
+For our case we want to use IAM authentication and - the JDBC URL would have one
+of these forms:
+* `jdbc:redshift:iam://[host]:[port]/[db]?ssl=true&plugin_name=XX&login_url=YY`
+* `jdbc:redshift:iam://[cluster-id]:[region]/[db]?ssl=true&plugin_name=XX&login_url=YY`
+
+The value of `plugin_name` needs to be `com.amazon.redshift.plugin.BrowserSamlCredentialsProvider`
+so that the JDBC driver opens a new browser window allowing user to
+authenticate in our SAML IdP at the URL specified as the value of `login_url`
+JDBC URL parameter, e.g. `http://localhost:8080/simplesaml/login-jdbc.php`.
+
+> Note: `login-jdbc.php` is a workaround as I could not figure out how to put
+> directly in the connection string the actual sign-in URL
+> http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc.
+> `?` character was causing issues.
+
+You can find the details how to provide IAM credentials on [this page](https://docs.aws.amazon.com/redshift/latest/mgmt/options-for-providing-iam-credentials.html)
+for all Redshift-supported SAML identity providers. Since we want to delegate
+the user authentication to our IdP we are interested only in the use of various
+credentials provider plugins.
