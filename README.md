@@ -18,7 +18,7 @@ Table of Contents
 * [In Action](#in-action)
 * [Breaking it Down](#breaking-it-down)
 * [Clean-up](#clean-up)
-* [Bonus: SAML Federation for Amazon Redshift](#bonus--saml-federation-for-amazon-redshift)
+* [Bonus: SAML Federation for Amazon Redshift](#bonus-saml-federation-for-amazon-redshift)
 
 ## Prerequisites
 
