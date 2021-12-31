@@ -1,11 +1,20 @@
-# Amanzon Athena and SAML Federation
+# Amazon Athena and SAML Federation
+
+[Amazon Athena](https://aws.amazon.com/athena/) is AWS servless service
+allowing to query data stored in S3 using SQL.
+
+SAML ([Security Assertion Markup Language](https://en.wikipedia.org/wiki/Security_Assertion_Markup_Language))
+allows a service provider (e.g. AWS) to delegate authentication to the identity
+provider which is the system of record for users in a single sign-on (SSO) 
+ecosystem.
 
 This repository shows an example how to configure SAML federation for Amanzon Athena.
 
-The example uses [SimpleSAMLphp](https://simplesamlphp.org/) as SAML identity
-provider. Once our configuration is complete we will be able to sign-in to AWS
-console and execute Athena sample query. We will also be able to execute this
-query from a Java application using SAML federation with Athena JDBC driver.
+The example uses [SimpleSAMLphp](https://simplesamlphp.org/) as a generic SAML
+identity provider. Once our configuration is complete we will be able to
+sign-in to AWS console and execute Athena sample query. We will also be able to
+execute this query from a Java application using SAML federation with Athena
+JDBC driver.
 
 > IMPORTANT
 >
