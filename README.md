@@ -1,6 +1,6 @@
 # Amazon Athena and SAML Federation
 
-[Amazon Athena](https://aws.amazon.com/athena/) is AWS servless service
+[Amazon Athena](https://aws.amazon.com/athena/) is AWS serverless service
 allowing to query data stored in S3 using SQL.
 
 SAML ([Security Assertion Markup Language](https://en.wikipedia.org/wiki/Security_Assertion_Markup_Language))
@@ -8,7 +8,7 @@ allows a service provider (e.g. AWS) to delegate authentication to the identity
 provider which is the system of record for users in a single sign-on (SSO) 
 ecosystem.
 
-This repository shows an example how to configure SAML federation for Amanzon Athena.
+This repository shows an example how to configure SAML federation for Amazon Athena.
 
 The example uses [SimpleSAMLphp](https://simplesamlphp.org/) as a generic SAML
 identity provider. Once our configuration is complete we will be able to
@@ -279,7 +279,7 @@ CloudFormation template.
 
 `EmptyAthenaQueryResultsS3BucketRole`, `EmptyAthenaQueryResultsS3BucketLambda`,
 `EmptyAthenaQueryResultsS3BucketOnDelete` - are resources which are not
-strickly needed for our example. We have them to avoid the need to manually
+strictly needed for our example. We have them to avoid the need to manually
 empty the query results S3 bucket before it can be removed when the
 CloudFormation stack is deleted. We have Lambda function that empties the
 bucket, IAM role that gives Lambda the permissions to perform its work,
@@ -321,7 +321,7 @@ its responses, we inject the content of the XML replacing `__METADATA_XML__`
 marker in the template file - see [AWS Resources](#aws-resources) for details.
 
 `AthenaReadOnlyIdPRole` - is the IAM role that is attached to our identity provider.
-Users signin-in with our SimpleSAMLphp assume this role. The role also contains
+Users sign-in with our SimpleSAMLphp assume this role. The role also contains
 permissions that the user has - in our case possibility to query Athena database.
 
 Our role's `AssumeRolePolicyDocument` has condition specifying that incoming 
@@ -352,7 +352,7 @@ file.
 
 The file defines 2 almost identical service providers:
 * `urn:amazon:webservices` - used when accessing AWS console.
-* `urn:amazon:webservices:jdbc` - usere when connecting via JDBC.
+* `urn:amazon:webservices:jdbc` - used when connecting via JDBC.
 
 The only difference is the `Location` defined in `AssertionConsumerService`
 which for JDBC connection is `http://localhost:7890/athena`.  We will explain
@@ -373,7 +373,7 @@ SAML response:
 
 > Noteworthy: SimpleSAMLphp sends back ("releases") only the attributes the
 > service provider specified in its metadata. If you want to send more attributes
-> you either have to define a custom [authentification processing filter](https://simplesamlphp.org/docs/stable/simplesamlphp-authproc)
+> you either have to define a custom [authentication processing filter](https://simplesamlphp.org/docs/stable/simplesamlphp-authproc)
 > or manually update the `attributes` array (add more attributes) in service
 > provider metadata in `idp/saml20-sp-remote.php` file.
 
@@ -407,13 +407,13 @@ show the page specified in `login_url` parameter.
 
 In order for the SAML response to be sent to the driver temporary server we
 need to configure the service provider in SimpleSAMLphp such that it sends the
-SAML response to the URL http://locahost:7890/athena. That is why we defined a
+SAML response to the URL http://localhost:7890/athena. That is why we defined a
 separate service provider `urn:amazon:webservices:jdbc` that uses that URL as
 `AssertionConsumerService` location.
 
 Finally, we also need to tell AWS that the SAML audience attribute `SAML:aud`
 for the JDBC connections is `http://localhost:7890/athena`. This is done in
-the condtion present in AWS SAML provider IAM role (`AssumeRolePolicyDocument`
+the condition present in AWS SAML provider IAM role (`AssumeRolePolicyDocument`
 in `AthenaReadOnlyIdPRole` CloudFormation template resource).
 
 ## Clean-up
@@ -433,7 +433,7 @@ aws cloudformation wait stack-delete-complete --stack-name Athena-SAML
 
 ## Bonus: SAML Federation for Amazon Redshift
 
-Amazon Redshift is a fully managed datawarehouse service.
+Amazon Redshift is a fully managed data warehouse service.
 
 SAML federation for Redshift is similar to the Athena SAML federation described
 in the previous sections, with a few differences.
@@ -506,7 +506,7 @@ we want to grant this access to. This is done in `authsources.php`, e.g.
 
 ```
 
-The final step is to update the AWS service provider metatdata in `saml20-sp-remote.php`,
+The final step is to update the AWS service provider metadata in `saml20-sp-remote.php`,
 changing the `Location` of `AssertionConsumerService` to `http://localhost:7890/redshift/`
 (the leading `/` is required).
 
