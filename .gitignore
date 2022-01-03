@@ -3,5 +3,5 @@
 SimbaAthenaJDBC*/
 *.crt
 *.pem
-idp-metadata.xml
+metadata.xml
 athena-saml.template.yml

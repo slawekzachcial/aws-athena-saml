@@ -244,7 +244,7 @@ Once we have it installed let's define our Athena connection:
 * On the `Driver Properties` tab we need to set the value of `AwsCredentialsProviderClass`
   driver property to `com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider`
 * Finally on that same page we need to add a new `User Property` called
-  `login_url` and set its value to `http://localhost:8080/simplesaml/login-jdbc.php`
+  `login_url` and set its value to `http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc`
 
 Once all these settings done we should be able to `Test Connection`. Doing
 so opens a new browser window with our IdP sign-in page. Signing-in as
@@ -391,19 +391,19 @@ To get the SAML response the driver does 2 things:
 2. Starts a temporary server, usually at http://localhost:7890/athena, that receives
    the SAML response.
 
-Let's look at JDBC driver connection string:
+Let's look at JDBC driver connection string and its properties:
 
-```
-jdbc:awsathena://AwsRegion=us-east-2;Schema=mydatabase;S3OutputLocation=s3://athena-saml-query-results;AwsCredentialsProviderClass=com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider;login_url=http://localhost:8080/simplesaml/login-jdbc.php
+```java
+Properties connProps = new Properties();
+connProps.put("AwsRegion", "us-east-2");
+connProps.put("S3OutputLocation", "s3://athena-saml-query-results);
+connProps.put("AwsCredentialsProviderClass", "com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider");
+connProps.put("login_url", "http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc");
+String dbUrl = "jdbc:awsathena://Schema=mydatabase";
 ```
 
 The value of `AwsCredentialsProviderClass` tells to open a browser window and
 show the page specified in `login_url` parameter.
-
-> Note: [idp/login-jdbc.php](idp/login-jdbc.php) is a workaround as I could not figure out
-> how to put directly in the connection string the actual sign-in URL
-> http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc.
-> `?` character was causing issues.
 
 In order for the SAML response to be sent to the driver temporary server we
 need to configure the service provider in SimpleSAMLphp such that it sends the
@@ -523,12 +523,7 @@ of these forms:
 The value of `plugin_name` needs to be `com.amazon.redshift.plugin.BrowserSamlCredentialsProvider`
 so that the JDBC driver opens a new browser window allowing user to
 authenticate in our SAML IdP at the URL specified as the value of `login_url`
-JDBC URL parameter, e.g. `http://localhost:8080/simplesaml/login-jdbc.php`.
-
-> Note: `login-jdbc.php` is a workaround as I could not figure out how to put
-> directly in the connection string the actual sign-in URL
-> http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc.
-> `?` character was causing issues.
+JDBC URL parameter, e.g. `http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc`.
 
 You can find the details how to provide IAM credentials on [this page](https://docs.aws.amazon.com/redshift/latest/mgmt/options-for-providing-iam-credentials.html)
 for all Redshift-supported SAML identity providers. Since we want to delegate

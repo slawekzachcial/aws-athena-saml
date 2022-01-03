@@ -1,3 +1,4 @@
+import java.util.Properties;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -12,17 +13,21 @@ public class AthenaSamlQuery {
         String s3Location = "s3://" + bucketName;
 
         String idpUrl = args.length >= 2 ? args[1] : "http://localhost:8080";
-        String loginUrl = idpUrl + "/simplesaml/login-jdbc.php";
+        String loginUrl = idpUrl + "/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc";
 
+        Properties connProps = new Properties();
+        connProps.put("AwsRegion", "us-east-2");
+        connProps.put("S3OutputLocation", s3Location);
+        connProps.put("AwsCredentialsProviderClass", "com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider");
+        // login_url parameter value can be put directly in the JDBC URL rather
+        // than in connection Properties if it does not contain query string,
+        // e.g. /simplesaml/login-jdbc.php
+        connProps.put("login_url", loginUrl);
 
-        String dbUrl = String.format("jdbc:awsathena://AwsRegion=%s;Schema=%s;S3OutputLocation=%s;AwsCredentialsProviderClass=%s;login_url=%s",
-            "us-east-2",
-            "mydatabase",
-            s3Location,
-            "com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider",
-            loginUrl);
-
-        try(Connection conn = DriverManager.getConnection(dbUrl);
+        // Something must be present in the JDBC URL after ://. Otherwise Schema
+        // could probably be also put in connProps above.
+        String dbUrl = "jdbc:awsathena://Schema=mydatabase";
+        try(Connection conn = DriverManager.getConnection(dbUrl, connProps);
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(QUERY);
            ) {
