@@ -93,7 +93,7 @@ content without installing 3rd party tools. For our needs we will use the good
 old `sed` (Credits: [Ben Pingilley](https://stackoverflow.com/a/33398190)).
 
 ```sh
-curl http://localhost:8080/simplesaml/saml2/idp/metadata.php \
+curl -s http://localhost:8080/simplesaml/saml2/idp/metadata.php \
   | sed -e 's/^/        /' \
   | sed -e "/__METADATA_XML__/r /dev/stdin" -e "//d" aws/athena-saml.partial-template.yml \
   > aws/athena-saml.template.yml
@@ -390,7 +390,7 @@ Let's look at JDBC driver connection string and its properties:
 ```java
 Properties connProps = new Properties();
 connProps.put("AwsRegion", "us-east-2");
-connProps.put("S3OutputLocation", "s3://athena-saml-query-results);
+connProps.put("S3OutputLocation", "s3://athena-saml-query-results");
 connProps.put("AwsCredentialsProviderClass", "com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider");
 connProps.put("login_url", "http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc");
 String dbUrl = "jdbc:awsathena://Schema=mydatabase";
