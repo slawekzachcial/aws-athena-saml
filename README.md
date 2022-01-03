@@ -77,14 +77,6 @@ command instead:
 AWS_ACCOUNT_ID=123456789012 PORT=9090 idp/SimpleSAMLphp.sh
 ```
 
-We now need to download our IdP metadata that will get injected into CloudFormation
-template when creating AWS identity provider:
-
-```sh
-curl http://localhost:8080/simplesaml/saml2/idp/metadata.php \
-  --output idp/metadata.xml
-```
-
 ### AWS Resources
 
 Before creating AWS resources first set an environment variable containing
@@ -95,20 +87,22 @@ where Athena query results will be stored:
 export BUCKET_NAME=athena-saml-query-results
 ```
 
-We also need to inject the IdP metadata XML in the CloudFormation template.
+We also need to inject the SimpleSAMLphp IdP metadata XML in the CloudFormation template.
 CloudFormation does not provide an easy way to inject or reference a local file
 content without installing 3rd party tools. For our needs we will use the good
 old `sed` (Credits: [Ben Pingilley](https://stackoverflow.com/a/33398190)).
 
 ```sh
-sed -e 's/^/        /' idp/metadata.xml \
+curl http://localhost:8080/simplesaml/saml2/idp/metadata.php \
+  | sed -e 's/^/        /' \
   | sed -e "/__METADATA_XML__/r /dev/stdin" -e "//d" aws/athena-saml.partial-template.yml \
   > aws/athena-saml.template.yml
 ```
 
-The first `sed` creates the appropriate indentation required by the YAML file.
-Its output is then sent to the 2nd `sed` to replace the marker `__METADATA_XML__`
-and create `aws/athena-saml.template.yml`.
+The `curl` retrieves the metadata from SimpleSAMLphp. The first `sed` creates
+the appropriate indentation required by the YAML file. Its output is then sent
+to the 2nd `sed` to replace the marker `__METADATA_XML__` and create
+`aws/athena-saml.template.yml`.
 
 We can finally create AWS resources:
 
@@ -240,7 +234,7 @@ Once we have it installed let's define our Athena connection:
   JDBC driver with AWS SDK JAR file (same as in [JDBC](#jdbc) section)
 * Back on the `Connection Settings` page we need to specify the same `Region` as 
   where we created AWS resources and `S3 Location` using the name of the S3
-  bucket we have stored in `BUCKET_NAME` variable, e.g.  `s3://athena-saml-query-results`.
+  bucket we have stored in `BUCKET_NAME` variable, e.g. `s3://athena-saml-query-results`.
 * On the `Driver Properties` tab we need to set the value of `AwsCredentialsProviderClass`
   driver property to `com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider`
 * Finally on that same page we need to add a new `User Property` called
@@ -355,7 +349,7 @@ The file defines 2 almost identical service providers:
 * `urn:amazon:webservices:jdbc` - used when connecting via JDBC.
 
 The only difference is the `Location` defined in `AssertionConsumerService`
-which for JDBC connection is `http://localhost:7890/athena`.  We will explain
+which for JDBC connection is `http://localhost:7890/athena`. We will explain
 the details in the [JDBC Driver Trick](#jdbc-driver-trick) section below.
 
 Our SAML users are defined in [idp/authsources.php](idp/authsources.php):
