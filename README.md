@@ -59,7 +59,14 @@ openssl req \
   -out idp/server.crt \
   -keyout idp/server.pem \
   -subj '/CN=localhost'
+chmod +r idp/server.pem
 ```
+
+> Note: Making `server.pem` readable by all is a hack/workaround to keep this
+> demo simple and avoid Docker volume ownership complexities. In a real
+> implementation a key file CAN be readable ONLY by its owner - in our case it
+> is `www-data` user that Apache web server is running as within the
+> SimpleSAMLphp Docker container.
 
 Let's open a new terminal and start our SimpleSAMLphp IdP. For that we will
 need the number of our AWS account to replace the `123456789012` value below.
