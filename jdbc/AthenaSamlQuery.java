@@ -12,7 +12,7 @@ public class AthenaSamlQuery {
         String bucketName = args.length >= 1 ? args[0] : "athena-saml-query-results";
         String s3Location = "s3://" + bucketName;
 
-        String idpUrl = args.length >= 2 ? args[1] : "http://localhost:8080";
+        String idpUrl = args.length >= 2 ? args[1] : "https://localhost:8443";
         String loginUrl = idpUrl + "/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc";
 
         Properties connProps = new Properties();

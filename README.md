@@ -5,7 +5,7 @@ allowing to query data stored in S3 using SQL.
 
 SAML ([Security Assertion Markup Language](https://en.wikipedia.org/wiki/Security_Assertion_Markup_Language))
 allows a service provider (e.g. AWS) to delegate authentication to the identity
-provider which is the system of record for users in a single sign-on (SSO) 
+provider which is the system of record for users in a single sign-on (SSO)
 ecosystem.
 
 This repository shows an example how to configure SAML federation for Amazon Athena.
@@ -76,12 +76,12 @@ The underlying script uses the certificate and the key we just generated.
 AWS_ACCOUNT_ID=123456789012 idp/SimpleSAMLphp.sh
 ```
 
-The default configuration assumes SimpleSAMLphp runs on port `8080`.
-If you want to use a different port (e.g. 9090) start SimpleSAMLphp using this
+The default configuration assumes SimpleSAMLphp runs on port `8443`.
+If you want to use a different port (e.g. 9443) start SimpleSAMLphp using this
 command instead:
 
 ```sh
-AWS_ACCOUNT_ID=123456789012 PORT=9090 idp/SimpleSAMLphp.sh
+AWS_ACCOUNT_ID=123456789012 PORT=9443 idp/SimpleSAMLphp.sh
 ```
 
 ### AWS Resources
@@ -100,7 +100,7 @@ content without installing 3rd party tools. For our needs we will use the good
 old `sed` (Credits: [Ben Pingilley](https://stackoverflow.com/a/33398190)).
 
 ```sh
-curl -s http://localhost:8080/simplesaml/saml2/idp/metadata.php \
+curl -sk https://localhost:8443/simplesaml/saml2/idp/metadata.php \
   | sed -e 's/^/        /' \
   | sed -e "/__METADATA_XML__/r /dev/stdin" -e "//d" aws/athena-saml.partial-template.yml \
   > aws/athena-saml.template.yml
@@ -143,7 +143,11 @@ in the [Breaking it Down](#breaking-it-down) section.
 
 Let's open the following URL to sign-in to the IdP:
 
-http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices
+https://localhost:8443/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices
+
+> Noteworthy: As we use self-signed certificate, the browser will show you a
+> warning page. Confirm that you're accepting the risk and move to the actual
+> page.
 
 There are 2 users we can use (defined in [idp/authsources.php](idp/authsources.php)):
 1. `user1` (password: `user1pass`) has access to AWS console and can run Athena queries.
@@ -192,6 +196,10 @@ We also need Athena JDBC driver with AWS SDK that we can download from
 [this page](https://docs.aws.amazon.com/athena/latest/ug/connect-with-jdbc.html).
 The following commands assume the driver JAR file is available in our project
 directory in `SimbaAthenaJDBC-2.0.25.1001/AthenaJDBC42_2.0.25.1001.jar`.
+
+> Noteworthy: You may be using a newer version of the driver. In this case you
+> need to replace all the paths for the driver JAR file referenced below with
+> the one that corresponds to your setup.
 
 Let's first compile our class:
 
@@ -245,7 +253,7 @@ Once we have it installed let's define our Athena connection:
 * On the `Driver Properties` tab we need to set the value of `AwsCredentialsProviderClass`
   driver property to `com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider`
 * Finally on that same page we need to add a new `User Property` called
-  `login_url` and set its value to `http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc`
+  `login_url` and set its value to `https://localhost:8443/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc`
 
 Once all these settings done we should be able to `Test Connection`. Doing
 so opens a new browser window with our IdP sign-in page. Signing-in as
@@ -316,7 +324,7 @@ IAM identity provider resources are defined in [aws/athena-saml.partial-template
 CloudFormation template.
 
 `SimpleSAMLphpIdP` - is IAM identity provider. To establish the trust it requires
-SimpleSAMLphp identity provider metadata normally located at http://localhost:8080/simplesaml/saml2/idp/metadata.php.
+SimpleSAMLphp identity provider metadata normally located at https://localhost:8443/simplesaml/saml2/idp/metadata.php.
 Since on each setup we generate a new certificate that SimpleSAMLphp uses to sign
 its responses, we inject the content of the XML replacing `__METADATA_XML__`
 marker in the template file - see [AWS Resources](#aws-resources) for details.
@@ -347,9 +355,10 @@ account SimpleSAMLphp also needs AWS SAML metadata, normally available at
 https://signin.aws.amazon.com/static/saml-metadata.xml.
 
 SimpleSAMLphp stores the service provider metadata as PHP snippets. To make the conversion from
-XML to PHP we used a built-in converter available at http://localhost:8080/simplesaml/admin/metadata-converter.php
+XML to PHP we used a built-in converter available at https://localhost:8443/simplesaml/admin/metadata-converter.php
 and stored the results in [idp/saml20-sp-remote.php](idp/saml20-sp-remote.php)
-file.
+file. To get to the converter page you will need authentcate as admin (user:
+`admin`, password: `secret`).
 
 The file defines 2 almost identical service providers:
 * `urn:amazon:webservices` - used when accessing AWS console.
@@ -399,7 +408,7 @@ Properties connProps = new Properties();
 connProps.put("AwsRegion", "us-east-2");
 connProps.put("S3OutputLocation", "s3://athena-saml-query-results");
 connProps.put("AwsCredentialsProviderClass", "com.simba.athena.iamsupport.plugin.BrowserSamlCredentialsProvider");
-connProps.put("login_url", "http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc");
+connProps.put("login_url", "https://localhost:8443/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc");
 String dbUrl = "jdbc:awsathena://Schema=mydatabase";
 ```
 
@@ -524,7 +533,7 @@ of these forms:
 The value of `plugin_name` needs to be `com.amazon.redshift.plugin.BrowserSamlCredentialsProvider`
 so that the JDBC driver opens a new browser window allowing user to
 authenticate in our SAML IdP at the URL specified as the value of `login_url`
-JDBC URL parameter, e.g. `http://localhost:8080/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc`.
+JDBC URL parameter, e.g. `https://localhost:8443/simplesaml/saml2/idp/SSOService.php?spentityid=urn:amazon:webservices:jdbc`.
 
 You can find the details how to provide IAM credentials on [this page](https://docs.aws.amazon.com/redshift/latest/mgmt/options-for-providing-iam-credentials.html)
 for all Redshift-supported SAML identity providers. Since we want to delegate
