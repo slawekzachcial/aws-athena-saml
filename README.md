@@ -357,7 +357,7 @@ https://signin.aws.amazon.com/static/saml-metadata.xml.
 SimpleSAMLphp stores the service provider metadata as PHP snippets. To make the conversion from
 XML to PHP we used a built-in converter available at https://localhost:8443/simplesaml/admin/metadata-converter.php
 and stored the results in [idp/saml20-sp-remote.php](idp/saml20-sp-remote.php)
-file. To get to the converter page you will need authentcate as admin (user:
+file. To get to the converter page you will need authenticate as admin (user:
 `admin`, password: `secret`).
 
 The file defines 2 almost identical service providers:
